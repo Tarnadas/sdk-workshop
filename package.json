@@ -11,7 +11,12 @@
     "format": "prettier --write . && yarn eslint --fix ."
   },
   "dependencies": {
+    "@orderly.network/core": "^0.1.1",
+    "@orderly.network/hooks": "^1.0.15",
+    "@orderly.network/types": "^0.1.1",
     "@radix-ui/themes": "^2.0.2",
+    "axios": "^1.6.2",
+    "ethers": "^6.9.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

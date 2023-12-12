@@ -1,30 +1,74 @@
-import { useState } from 'react';
+import { useAccount } from '@orderly.network/hooks';
+import { AccountStatusEnum } from '@orderly.network/types';
+import { Button, Container, Flex } from '@radix-ui/themes';
+import { JsonRpcSigner, BrowserProvider } from 'ethers';
+import { useEffect, useState } from 'react';
 
-import reactLogo from './assets/react.svg';
-import viteLogo from './assets/vite.svg';
+import { checkValidNetwork, testnetChainIdHex } from './network';
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [provider, setProvider] = useState<BrowserProvider | undefined>();
+  const [signer, setSigner] = useState<JsonRpcSigner | undefined>();
+  const { account, state } = useAccount();
+
+  useEffect(() => {
+    async function run() {
+      if (!window.ethereum) return;
+      const p = new BrowserProvider(window.ethereum);
+      setProvider(p);
+      const s = await p.getSigner();
+      setSigner(s);
+
+      await account.setAddress(s.address, {
+        provider: window.ethereum,
+        chain: {
+          id: testnetChainIdHex
+        }
+      });
+    }
+    run();
+  }, [account]);
+
+  useEffect(() => {
+    if (!provider) return;
+    checkValidNetwork(provider);
+  }, [provider]);
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
-    </>
+    <Container style={{ margin: '2rem' }}>
+      <Flex gap="3" align="center" justify="center">
+        <Button
+          disabled={provider == null}
+          onClick={async () => {
+            if (!provider || !!signer) return;
+            const s = await provider.getSigner();
+            setSigner(s);
+          }}
+        >
+          {signer
+            ? `${signer.address.substring(0, 6)}...${signer.address.substr(-4)}`
+            : 'Connect wallet'}
+        </Button>
+
+        <Button
+          disabled={state.status > AccountStatusEnum.NotSignedIn}
+          onClick={() => {
+            account.createAccount();
+          }}
+        >
+          Create Account
+        </Button>
+
+        <Button
+          disabled={state.status > AccountStatusEnum.DisabledTrading}
+          onClick={() => {
+            account.createOrderlyKey(30);
+          }}
+        >
+          Create Orderly Key
+        </Button>
+      </Flex>
+    </Container>
   );
 }
 
